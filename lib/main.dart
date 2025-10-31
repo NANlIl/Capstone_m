@@ -14,8 +14,8 @@ class NihongoApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFF00AFF0),
-        // AppBar의 배경색도 통일감을 주기 위해 같은 색으로 설정
-        appBarTheme: const AppBarTheme(color: Color(0xFF00AFF0)),
+        // AppBar의 배경색도 통일감을 주기 위해 같은 색으로 설정 (color -> backgroundColor로 수정)
+        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF00AFF0)),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: const WelcomeScreen(),
