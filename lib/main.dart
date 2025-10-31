@@ -148,12 +148,14 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1; // 기본으로 '학습' 탭이 선택되도록 설정
+  int _selectedIndex = 0; // 기본으로 '학습' 탭이 선택되도록 0으로 변경
 
+  // 하단 탭에 표시될 화면 목록 (순서 변경)
   static const List<Widget> _widgetOptions = <Widget>[
-    MyPageScreen(),
     LearningScreen(),
+    VocabularyScreen(),
     BoardScreen(),
+    MyPageScreen(),
     MenuScreen(),
   ];
 
@@ -168,24 +170,29 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nihongo App'),
-        // automaticallyImplyLeading: false, // 뒤로가기 버튼이 자동으로 생기도록 이 줄을 제거
+        automaticallyImplyLeading: true, // 뒤로가기 버튼 표시
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        // 하단 탭 아이템 순서 변경
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: '마이페이지',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.school),
             label: '학습',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: '단어장',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.forum),
             label: '게시판',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: '마이페이지',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.menu),
@@ -197,9 +204,9 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
-        selectedFontSize: 12.0, // 작은 폰트 크기
+        selectedFontSize: 12.0,
         unselectedFontSize: 12.0,
-        type: BottomNavigationBarType.fixed, // 4개 이상의 아이템이 고정되도록 설정
+        type: BottomNavigationBarType.fixed, // 5개 아이템이 고정되도록 설정
       ),
     );
   }
@@ -225,6 +232,8 @@ class LearningScreen extends StatelessWidget {
           _buildMenuButton(context, '단어 학습', () { /* TODO */ }),
           const SizedBox(height: 16),
           _buildMenuButton(context, '문법/예문 학습', () { /* TODO */ }),
+          const SizedBox(height: 16),
+          _buildMenuButton(context, '실력평가', () { /* TODO */ }),
         ],
       ),
     );
@@ -235,7 +244,7 @@ class LearningScreen extends StatelessWidget {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 24.0),
-        textStyle: const TextStyle(fontSize: 20),
+        textStyle: const TextStyle(fontSize: 20), 
       ),
       child: Text(title),
     );
@@ -248,6 +257,15 @@ class MyPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('마이페이지 화면', style: TextStyle(fontSize: 24, color: Colors.white)));
+  }
+}
+
+// 새로 추가된 단어장 화면
+class VocabularyScreen extends StatelessWidget {
+  const VocabularyScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text('단어장 화면', style: TextStyle(fontSize: 24, color: Colors.white)));
   }
 }
 
