@@ -377,8 +377,8 @@ class VocabularyListScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AddVocabularyBookScreen()));
         },
-        child: const Icon(Icons.add),
         backgroundColor: Colors.black,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -438,7 +438,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<String>(
-              value: _selectedBook,
+              initialValue: _selectedBook,
               hint: const Text('단어장을 선택하세요'),
               onChanged: (String? newValue) {
                 if (newValue != null) {
