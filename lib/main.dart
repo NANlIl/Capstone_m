@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nihongo/data/database_helper.dart';
 
 // --- 1. 트렌디한 디자인을 위한 테마 정의 ---
 
@@ -26,8 +27,14 @@ class FadePageRoute<T> extends PageRouteBuilder<T> {
         );
 }
 
-void main() {
+void main() async {
+  debugPrint("--- main() 시작 ---");
+  WidgetsFlutterBinding.ensureInitialized();
+  debugPrint("--- 데이터베이스 초기화 시작 ---");
+  await DatabaseHelper.instance.database;
+  debugPrint("--- 데이터베이스 초기화 완료 ---");
   runApp(const NihongoApp());
+  debugPrint("--- runApp() 실행 완료 ---");
 }
 
 class NihongoApp extends StatelessWidget {
@@ -342,9 +349,7 @@ class _VocabularyFeatureScreenState extends State<VocabularyFeatureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('단어장'),
-      ),
+      appBar: AppBar(title: const Text('단어장')),
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -581,152 +586,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
 
 // --- 문자 학습 기능 구현 ---
 
-class Kana {
-  final String character;
-  final String pronunciation;
-
-  const Kana({required this.character, required this.pronunciation});
-}
-
-// 가독성을 위해 행별로 그룹화 및 주석 추가
-const hiraganaList = [
-  // あ행
-  Kana(character: 'あ', pronunciation: 'a'),
-  Kana(character: 'い', pronunciation: 'i'),
-  Kana(character: 'う', pronunciation: 'u'),
-  Kana(character: 'え', pronunciation: 'e'),
-  Kana(character: 'お', pronunciation: 'o'),
-  // か행
-  Kana(character: 'か', pronunciation: 'ka'),
-  Kana(character: 'き', pronunciation: 'ki'),
-  Kana(character: 'く', pronunciation: 'ku'),
-  Kana(character: 'け', pronunciation: 'ke'),
-  Kana(character: 'こ', pronunciation: 'ko'),
-  // さ행
-  Kana(character: 'さ', pronunciation: 'sa'),
-  Kana(character: 'し', pronunciation: 'shi'),
-  Kana(character: 'す', pronunciation: 'su'),
-  Kana(character: 'せ', pronunciation: 'se'),
-  Kana(character: 'そ', pronunciation: 'so'),
-  // た행
-  Kana(character: 'た', pronunciation: 'ta'),
-  Kana(character: 'ち', pronunciation: 'chi'),
-  Kana(character: 'つ', pronunciation: 'tsu'),
-  Kana(character: 'て', pronunciation: 'te'),
-  Kana(character: 'と', pronunciation: 'to'),
-  // な행
-  Kana(character: 'な', pronunciation: 'na'),
-  Kana(character: 'に', pronunciation: 'ni'),
-  Kana(character: 'ぬ', pronunciation: 'nu'),
-  Kana(character: 'ね', pronunciation: 'ne'),
-  Kana(character: 'の', pronunciation: 'no'),
-  // は행
-  Kana(character: 'は', pronunciation: 'ha'),
-  Kana(character: 'ひ', pronunciation: 'hi'),
-  Kana(character: 'ふ', pronunciation: 'fu'),
-  Kana(character: 'へ', pronunciation: 'he'),
-  Kana(character: 'ほ', pronunciation: 'ho'),
-  // ま행
-  Kana(character: 'ま', pronunciation: 'ma'),
-  Kana(character: 'み', pronunciation: 'mi'),
-  Kana(character: 'む', pronunciation: 'mu'),
-  Kana(character: 'め', pronunciation: 'me'),
-  Kana(character: 'も', pronunciation: 'mo'),
-  // や행
-  Kana(character: 'や', pronunciation: 'ya'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: 'ゆ', pronunciation: 'yu'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: 'よ', pronunciation: 'yo'),
-  // ら행
-  Kana(character: 'ら', pronunciation: 'ra'),
-  Kana(character: 'り', pronunciation: 'ri'),
-  Kana(character: 'る', pronunciation: 'ru'),
-  Kana(character: 'れ', pronunciation: 're'),
-  Kana(character: 'ろ', pronunciation: 'ro'),
-  // わ행
-  Kana(character: 'わ', pronunciation: 'wa'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: 'を', pronunciation: 'wo'),
-  // ん
-  Kana(character: 'ん', pronunciation: 'n'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-];
-
-const katakanaList = [
-  // ア행
-  Kana(character: 'ア', pronunciation: 'a'),
-  Kana(character: 'イ', pronunciation: 'i'),
-  Kana(character: 'ウ', pronunciation: 'u'),
-  Kana(character: 'エ', pronunciation: 'e'),
-  Kana(character: 'オ', pronunciation: 'o'),
-  // カ행
-  Kana(character: 'カ', pronunciation: 'ka'),
-  Kana(character: 'キ', pronunciation: 'ki'),
-  Kana(character: 'ク', pronunciation: 'ku'),
-  Kana(character: 'ケ', pronunciation: 'ke'),
-  Kana(character: 'コ', pronunciation: 'ko'),
-  // サ행
-  Kana(character: 'サ', pronunciation: 'sa'),
-  Kana(character: 'シ', pronunciation: 'shi'),
-  Kana(character: 'ス', pronunciation: 'su'),
-  Kana(character: 'セ', pronunciation: 'se'),
-  Kana(character: 'ソ', pronunciation: 'so'),
-  // タ행
-  Kana(character: 'タ', pronunciation: 'ta'),
-  Kana(character: 'チ', pronunciation: 'chi'),
-  Kana(character: 'ツ', pronunciation: 'tsu'),
-  Kana(character: 'テ', pronunciation: 'te'),
-  Kana(character: 'ト', pronunciation: 'to'),
-  // ナ행
-  Kana(character: 'ナ', pronunciation: 'na'),
-  Kana(character: 'ニ', pronunciation: 'ni'),
-  Kana(character: 'ヌ', pronunciation: 'nu'),
-  Kana(character: 'ネ', pronunciation: 'ne'),
-  Kana(character: 'ノ', pronunciation: 'no'),
-  // ハ행
-  Kana(character: 'ハ', pronunciation: 'ha'),
-  Kana(character: 'ヒ', pronunciation: 'hi'),
-  Kana(character: 'フ', pronunciation: 'fu'),
-  Kana(character: 'ヘ', pronunciation: 'he'),
-  Kana(character: 'ホ', pronunciation: 'ho'),
-  // マ행
-  Kana(character: 'マ', pronunciation: 'ma'),
-  Kana(character: 'ミ', pronunciation: 'mi'),
-  Kana(character: 'ム', pronunciation: 'mu'),
-  Kana(character: 'メ', pronunciation: 'me'),
-  Kana(character: 'モ', pronunciation: 'mo'),
-  // ヤ행
-  Kana(character: 'ヤ', pronunciation: 'ya'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: 'ユ', pronunciation: 'yu'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: 'ヨ', pronunciation: 'yo'),
-  // ラ행
-  Kana(character: 'ラ', pronunciation: 'ra'),
-  Kana(character: 'リ', pronunciation: 'ri'),
-  Kana(character: 'ル', pronunciation: 'ru'),
-  Kana(character: 'レ', pronunciation: 're'),
-  Kana(character: 'ロ', pronunciation: 'ro'),
-  // ワ행
-  Kana(character: 'ワ', pronunciation: 'wa'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: 'ヲ', pronunciation: 'wo'),
-  // ン
-  Kana(character: 'ン', pronunciation: 'n'),
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-  Kana(character: '', pronunciation: ''), // Placeholder
-];
-
 class CharacterLearningScreen extends StatelessWidget {
   const CharacterLearningScreen({super.key});
 
@@ -741,14 +600,14 @@ class CharacterLearningScreen extends StatelessWidget {
             context,
             title: '히라가나',
             description: '일본어의 가장 기본적인 문자입니다. 부드러운 곡선이 특징이에요.',
-            onTap: () => Navigator.push(context, FadePageRoute(child: const KanaListScreen(title: '히라가나', kanaList: hiraganaList))),
+            onTap: () => Navigator.push(context, FadePageRoute(child: const KanaListScreen(title: '히라가나', type: 'hiragana'))),
           ),
           const SizedBox(height: 16),
           _buildKanaMenuCard(
             context,
             title: '가타카나',
             description: '주로 외래어나 의성어, 의태어를 표기할 때 사용해요.',
-            onTap: () => Navigator.push(context, FadePageRoute(child: const KanaListScreen(title: '가타카나', kanaList: katakanaList))),
+            onTap: () => Navigator.push(context, FadePageRoute(child: const KanaListScreen(title: '가타카나', type: 'katakana'))),
           ),
         ],
       ),
@@ -781,99 +640,129 @@ class CharacterLearningScreen extends StatelessWidget {
   }
 }
 
-class KanaListScreen extends StatelessWidget {
+class KanaListScreen extends StatefulWidget {
   final String title;
-  final List<Kana> kanaList;
+  final String type; // 'hiragana' or 'katakana'
 
-  const KanaListScreen({super.key, required this.title, required this.kanaList});
+  const KanaListScreen({super.key, required this.title, required this.type});
+
+  @override
+  State<KanaListScreen> createState() => _KanaListScreenState();
+}
+
+class _KanaListScreenState extends State<KanaListScreen> {
+  late Future<List<Kana>> _kanaListFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _kanaListFuture = DatabaseHelper.instance.getKana(widget.type);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(context, FadePageRoute(child: FlashcardScreen(title: title, kanaList: kanaList.where((kana) => kana.character.isNotEmpty).toList())));
-                    },
-                    icon: const Icon(Icons.style, color: Colors.white, size: 20),
-                    label: const Text('순서대로 학습', style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
+      appBar: AppBar(title: Text(widget.title)),
+      body: FutureBuilder<List<Kana>>(
+        future: _kanaListFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('데이터가 없습니다.'));
+          }
+
+          final kanaList = snapshot.data!;
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(context, FadePageRoute(child: FlashcardScreen(title: widget.title, kanaList: kanaList)));
+                        },
+                        icon: const Icon(Icons.style, color: Colors.white, size: 20),
+                        label: const Text('순서대로 학습', style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      final randomList = kanaList.where((kana) => kana.character.isNotEmpty).toList()..shuffle();
-                      Navigator.push(context, FadePageRoute(child: FlashcardScreen(title: '$title 랜덤 학습', kanaList: randomList)));
-                    },
-                    icon: const Icon(Icons.shuffle, color: Colors.white, size: 20),
-                    label: const Text('랜덤 학습', style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final randomList = [...kanaList].where((kana) => kana.character.isNotEmpty).toList()..shuffle();
+                          Navigator.push(context, FadePageRoute(child: FlashcardScreen(title: '${widget.title} 랜덤 학습', kanaList: randomList)));
+                        },
+                        icon: const Icon(Icons.shuffle, color: Colors.white, size: 20),
+                        label: const Text('랜덤 학습', style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1,
               ),
-              itemCount: kanaList.length,
-              itemBuilder: (context, index) {
-                final kana = kanaList[index];
-                if (kana.character.isEmpty) {
-                  return Container(); // 빈 칸일 경우 아무것도 표시하지 않음
-                }
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    side: const BorderSide(color: AppColors.border, width: 1),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1,
                   ),
-                  child: InkWell(
-                    onTap: () { /* TODO: 문자 선택 시 효과 (소리 재생 등) */ },
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          kana.character,
-                          style: const TextStyle(fontSize: 32, color: AppColors.headline),
+                  itemCount: kanaList.length,
+                  itemBuilder: (context, index) {
+                    final kana = kanaList[index];
+                    if (kana.character.isEmpty) {
+                      return Container(); // 빈 칸 렌더링
+                    }
+                    return Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        side: const BorderSide(color: AppColors.border, width: 1),
+                      ),
+                      child: InkWell(
+                        onTap: () { /* TODO: 문자 선택 시 효과 (소리 재생 등) */ },
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                kana.character,
+                                style: const TextStyle(fontSize: 26, color: AppColors.headline),
+                              ),
+                              Text(
+                                kana.pronunciation,
+                                style: const TextStyle(fontSize: 14, color: AppColors.textGrey),
+                              ),
+                            ],
+                          ),
                         ),
-                        Text(
-                          kana.pronunciation,
-                          style: const TextStyle(fontSize: 16, color: AppColors.textGrey),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
-
 
 class FlashcardScreen extends StatefulWidget {
   final String title;
@@ -915,8 +804,16 @@ class FlashcardScreenState extends State<FlashcardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final kana = widget.kanaList[_currentIndex];
-    final progress = (_currentIndex + 1) / widget.kanaList.length;
+    final filteredList = widget.kanaList.where((kana) => kana.character.isNotEmpty).toList();
+    if (filteredList.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.title)),
+        body: const Center(child: Text('학습할 카드가 없습니다.')),
+      );
+    }
+
+    final kana = filteredList[_currentIndex];
+    final progress = (_currentIndex + 1) / filteredList.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -949,8 +846,8 @@ class FlashcardScreenState extends State<FlashcardScreen> {
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: _isFlipped
-                          ? Text(kana.pronunciation, key: const ValueKey('pronunciation'), style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: AppColors.primary))
-                          : Text(kana.character, key: const ValueKey('character'), style: const TextStyle(fontSize: 100, color: AppColors.headline)),
+                          ? Text(kana.pronunciation, key: ValueKey('pronunciation_${kana.id}'), style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: AppColors.primary))
+                          : Text(kana.character, key: ValueKey('character_${kana.id}'), style: const TextStyle(fontSize: 100, color: AppColors.headline)),
                     ),
                   ),
                 ),
@@ -962,10 +859,10 @@ class FlashcardScreenState extends State<FlashcardScreen> {
               children: [
                 TextButton(onPressed: _currentIndex > 0 ? _previousCard : null, child: const Text('이전')),
                 Text(
-                  '${_currentIndex + 1} / ${widget.kanaList.length}',
+                  '${_currentIndex + 1} / ${filteredList.length}',
                   style: const TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.bold),
                 ),
-                TextButton(onPressed: _currentIndex < widget.kanaList.length - 1 ? _nextCard : null, child: const Text('다음')),
+                TextButton(onPressed: _currentIndex < filteredList.length - 1 ? _nextCard : null, child: const Text('다음')),
               ],
             ),
             const SizedBox(height: 16),
