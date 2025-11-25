@@ -31,8 +31,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  sqflite:
-  path:
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.8
+  cloud_firestore: ^4.15.8
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -89,3 +93,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Re-trigger pub get

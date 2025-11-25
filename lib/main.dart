@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nihongo/data/database_helper.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart'; // 이 파일은 flutterfire configure 후에 생성됩니다.
 
 // --- 1. 트렌디한 디자인을 위한 테마 정의 ---
 
@@ -30,9 +33,19 @@ class FadePageRoute<T> extends PageRouteBuilder<T> {
 void main() async {
   debugPrint("--- main() 시작 ---");
   WidgetsFlutterBinding.ensureInitialized();
-  debugPrint("--- 데이터베이스 초기화 시작 ---");
-  await DatabaseHelper.instance.database;
-  debugPrint("--- 데이터베이스 초기화 완료 ---");
+
+  // --- Firebase 초기화 ---
+  debugPrint("--- Firebase 초기화 시작 ---");
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  debugPrint("--- Firebase 초기화 완료 ---");
+
+
+  // debugPrint("--- 데이터베이스 초기화 시작 ---");
+  // await DatabaseHelper.instance.database; // 로컬 DB 초기화는 잠시 주석 처리
+  // debugPrint("--- 데이터베이스 초기화 완료 ---");
+
   runApp(const NihongoApp());
   debugPrint("--- runApp() 실행 완료 ---");
 }
@@ -201,8 +214,75 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
 // --- 회원가입 & 로그인 화면 ---
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp() async {
+    // 비밀번호와 비밀번호 확인이 일치하지 않으면 에러 메시지를 표시합니다.
+    if (_passwordController.text != _passwordConfirmController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('비밀번호가 일치하지 않습니다.')),
+      );
+      return;
+    }
+
+    try {
+      // Firebase Authentication을 사용하여 사용자를 생성합니다.
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      
+      // 성공 시, 로그인 화면으로 이동합니다.
+      if (mounted) { // 위젯이 여전히 화면에 있는지 확인
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입에 성공했습니다! 로그인해주세요.')),
+        );
+        Navigator.pushReplacement(context, FadePageRoute(child: const LoginScreen()));
+      }
+
+    } on FirebaseAuthException catch (e) {
+      // Firebase에서 발생한 에러를 처리합니다.
+      String message = '회원가입 중 오류가 발생했습니다.';
+      if (e.code == 'weak-password') {
+        message = '비밀번호는 6자리 이상이어야 합니다.';
+      } else if (e.code == 'email-already-in-use') {
+        message = '이미 사용 중인 이메일입니다.';
+      } else if (e.code == 'invalid-email') {
+        message = '유효하지 않은 이메일 형식입니다.';
+      }
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } catch (e) {
+      // 기타 에러 처리
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -213,17 +293,26 @@ class SignUpScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
-            TextFormField(decoration: const InputDecoration(labelText: '아이디')),
+            TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: '이메일'),
+              keyboardType: TextInputType.emailAddress, // 이메일 형식 키보드 표시
+            ),
             const SizedBox(height: 16.0),
-            TextFormField(obscureText: true, decoration: const InputDecoration(labelText: '비밀번호')),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: '비밀번호 (6자리 이상)'),
+            ),
             const SizedBox(height: 16.0),
-            TextFormField(obscureText: true, decoration: const InputDecoration(labelText: '비밀번호 확인')),
+            TextFormField(
+              controller: _passwordConfirmController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: '비밀번호 확인'),
+            ),
             const SizedBox(height: 32.0),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.push(context, FadePageRoute(child: const LoginScreen()));
-              },
+              onPressed: _signUp, // onPressed에 _signUp 함수 연결
               child: const Text('회원가입 완료', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             TextButton(
@@ -541,14 +630,11 @@ class _AddWordScreenState extends State<AddWordScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<String>(
-              initialValue: _selectedBook,
               hint: const Text('단어장을 선택하세요'),
               onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _selectedBook = newValue;
-                  });
-                }
+                setState(() {
+                  _selectedBook = newValue;
+                });
               },
               items: _vocabularyBooks.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
