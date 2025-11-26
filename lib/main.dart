@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nihongo/data/database_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firebase_options.dart'; // 이 파일은 flutterfire configure 후에 생성됩니다.
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 
 // --- 1. 트렌디한 디자인을 위한 테마 정의 ---
 
@@ -40,11 +42,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   debugPrint("--- Firebase 초기화 완료 ---");
-
-
-  // debugPrint("--- 데이터베이스 초기화 시작 ---");
-  // await DatabaseHelper.instance.database; // 로컬 DB 초기화는 잠시 주석 처리
-  // debugPrint("--- 데이터베이스 초기화 완료 ---");
 
   runApp(const NihongoApp());
   debugPrint("--- runApp() 실행 완료 ---");
@@ -125,43 +122,98 @@ class NihongoApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const WelcomeScreen(),
+      home: const AuthGate(), // 앱의 시작점을 AuthGate로 변경
     );
   }
 }
 
-// --- 3. 애니메이션이 적용된 시작 화면 ---
-
-class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({super.key});
+// --- 인증 상태에 따라 화면을 결정하는 위젯 ---
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // 사용자가 로그인하지 않았으면 로그인 화면을 보여줍니다.
+        if (!snapshot.hasData) {
+          return const LoginScreen();
+        }
+
+        // 사용자가 로그인했으면 메인 화면으로 이동합니다.
+        return const MainScreen();
+      },
+    );
+  }
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+
+// --- Google 로그인 화면 ---
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart),
-    );
-    _controller.forward();
-  }
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+class _LoginScreenState extends State<LoginScreen> {
+  bool _isLoading = false;
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Google 로그인 흐름 시작
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        // 사용자가 로그인 창을 닫은 경우
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // 2. Google 계정으로부터 인증 정보 가져오기
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 3. Firebase에 사용자 인증
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // 4. Firestore에 사용자 정보 저장 (첫 로그인 시에만)
+        final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+        final docSnapshot = await userDoc.get();
+
+        if (!docSnapshot.exists) {
+          userDoc.set({
+            'displayName': user.displayName,
+            'email': user.email,
+            'photoURL': user.photoURL,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
+
+    } catch (e) {
+      // 오류 처리
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('로그인 중 오류가 발생했습니다: ${e.toString()}')),
+        );
+      }
+    }
+    // isLoading 상태는 AuthGate에 의해 화면이 전환되므로 여기서 false로 바꿀 필요가 없습니다.
   }
 
   @override
@@ -170,7 +222,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             const Spacer(flex: 3),
@@ -184,171 +236,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   height: 1.4),
             ),
             const Spacer(flex: 2),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(context, FadePageRoute(child: const SignUpScreen())),
-                      child: const Text('시작하기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton.icon(
+                    onPressed: _signInWithGoogle,
+                    icon: const Icon(Icons.login), // 임시 아이콘으로 변경
+                    label: const Text('Google 계정으로 로그인', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        side: const BorderSide(color: AppColors.border),
+                      ),
                     ),
-                    const SizedBox(height: 12.0),
-                    TextButton(
-                      onPressed: () => Navigator.push(context, FadePageRoute(child: const LoginScreen())),
-                      child: const Text('이미 계정이 있습니다'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 32.0),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// --- 회원가입 & 로그인 화면 ---
-
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
-
-  @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
-}
-
-class _SignUpScreenState extends State<SignUpScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _passwordConfirmController = TextEditingController();
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _passwordConfirmController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _signUp() async {
-    // 비밀번호와 비밀번호 확인이 일치하지 않으면 에러 메시지를 표시합니다.
-    if (_passwordController.text != _passwordConfirmController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호가 일치하지 않습니다.')),
-      );
-      return;
-    }
-
-    try {
-      // Firebase Authentication을 사용하여 사용자를 생성합니다.
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-      
-      // 성공 시, 로그인 화면으로 이동합니다.
-      if (mounted) { // 위젯이 여전히 화면에 있는지 확인
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('회원가입에 성공했습니다! 로그인해주세요.')),
-        );
-        Navigator.pushReplacement(context, FadePageRoute(child: const LoginScreen()));
-      }
-
-    } on FirebaseAuthException catch (e) {
-      // Firebase에서 발생한 에러를 처리합니다.
-      String message = '회원가입 중 오류가 발생했습니다.';
-      if (e.code == 'weak-password') {
-        message = '비밀번호는 6자리 이상이어야 합니다.';
-      } else if (e.code == 'email-already-in-use') {
-        message = '이미 사용 중인 이메일입니다.';
-      } else if (e.code == 'invalid-email') {
-        message = '유효하지 않은 이메일 형식입니다.';
-      }
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
-      }
-    } catch (e) {
-      // 기타 에러 처리
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('회원가입')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: '이메일'),
-              keyboardType: TextInputType.emailAddress, // 이메일 형식 키보드 표시
-            ),
-            const SizedBox(height: 16.0),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: '비밀번호 (6자리 이상)'),
-            ),
-            const SizedBox(height: 16.0),
-            TextFormField(
-              controller: _passwordConfirmController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: '비밀번호 확인'),
-            ),
-            const SizedBox(height: 32.0),
-            ElevatedButton(
-              onPressed: _signUp, // onPressed에 _signUp 함수 연결
-              child: const Text('회원가입 완료', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pushReplacement(context, FadePageRoute(child: const MainScreen())),
-              child: const Text('게스트로 로그인 하기'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('로그인')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            TextFormField(decoration: const InputDecoration(labelText: '아이디')),
-            const SizedBox(height: 16.0),
-            TextFormField(obscureText: true, decoration: const InputDecoration(labelText: '비밀번호')),
-            const SizedBox(height: 32.0),
-            ElevatedButton(
-              onPressed: () => Navigator.pushReplacement(context, FadePageRoute(child: const MainScreen())),
-              child: const Text('로그인', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            TextButton(onPressed: () => Navigator.pushReplacement(context, FadePageRoute(child: const MainScreen())), child: const Text('게스트로 로그인 하기')),
-            TextButton(onPressed: () { /* TODO: 계정찾기 */ }, child: const Text('계정찾기')),
+                  ),
+            const Spacer(flex: 1),
           ],
         ),
       ),
@@ -389,6 +293,15 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await GoogleSignIn().signOut();
+              await FirebaseAuth.instance.signOut();
+            },
+          )
+        ],
         title: const Text('Nihongo'),
         automaticallyImplyLeading: false,
       ),
@@ -550,42 +463,129 @@ class VocabularyListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> vocabularyBooks = ['기초 단어', 'JLPT N3 단어', '비즈니스 일본어'];
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Center(child: Text('로그인이 필요합니다.'));
+    }
 
     return Scaffold(
-      body: ListView.builder(
-        padding: const EdgeInsets.only(top: 8, bottom: 80),
-        itemCount: vocabularyBooks.length,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              side: const BorderSide(color: AppColors.border, width: 1),
-            ),
-            child: ListTile(
-              title: Text(vocabularyBooks[index], style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('150 단어'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-              onTap: () { /* TODO */ },
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('vocabulary_books')
+            .where('ownerUid', isEqualTo: user.uid)
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('오류가 발생했습니다: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('단어장을 추가해주세요.'));
+          }
+
+          final docs = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.only(top: 8, bottom: 80),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final book = docs[index];
+              final bookName = book['name'] as String;
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  side: const BorderSide(color: AppColors.border, width: 1),
+                ),
+                child: ListTile(
+                  title: Text(bookName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text('0 단어'), // TODO: 단어 개수 표시
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () { /* TODO: 단어장 상세 화면으로 이동 */ },
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+              );
+            },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(context, FadePageRoute(child: const AddVocabularyBookScreen())),
         backgroundColor: AppColors.primary,
-        elevation: 2,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 }
 
-class AddVocabularyBookScreen extends StatelessWidget {
+class AddVocabularyBookScreen extends StatefulWidget {
   const AddVocabularyBookScreen({super.key});
+
+  @override
+  State<AddVocabularyBookScreen> createState() => _AddVocabularyBookScreenState();
+}
+
+class _AddVocabularyBookScreenState extends State<AddVocabularyBookScreen> {
+  final _bookNameController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _bookNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addVocabularyBook() async {
+    if (_bookNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('단어장 이름을 입력해주세요.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        // 이 경우는 거의 없지만, 안정성을 위해 추가
+        throw Exception('로그인이 필요합니다.');
+      }
+
+      await FirebaseFirestore.instance.collection('vocabulary_books').add({
+        'name': _bookNameController.text.trim(),
+        'ownerUid': user.uid, // 단어장 소유자 정보 저장
+        'createdAt': FieldValue.serverTimestamp(), // 생성 시간 저장
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('새 단어장이 추가되었습니다.')),
+        );
+        Navigator.pop(context); // 성공 시 이전 화면으로 돌아가기
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('오류가 발생했습니다: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -596,18 +596,24 @@ class AddVocabularyBookScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextFormField(decoration: const InputDecoration(labelText: '단어장 이름')),
-            const SizedBox(height: 24.0),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('만들기', style: TextStyle(fontWeight: FontWeight.bold)),
+            TextFormField(
+              controller: _bookNameController,
+              decoration: const InputDecoration(labelText: '단어장 이름'),
             ),
+            const SizedBox(height: 24.0),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+                    onPressed: _addVocabularyBook,
+                    child: const Text('만들기', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
           ],
         ),
       ),
     );
   }
 }
+
 
 class AddWordScreen extends StatefulWidget {
   const AddWordScreen({super.key});
@@ -617,11 +623,90 @@ class AddWordScreen extends StatefulWidget {
 }
 
 class _AddWordScreenState extends State<AddWordScreen> {
-  final List<String> _vocabularyBooks = ['기초 단어', 'JLPT N3 단어', '비즈니스 일본어'];
-  String? _selectedBook;
+  String? _selectedBookId;
+  final _wordController = TextEditingController();
+  final _meaningController = TextEditingController();
+  final _pronunciationController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _wordController.dispose();
+    _meaningController.dispose();
+    _pronunciationController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addWord() async {
+    if (_selectedBookId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('단어장을 먼저 선택해주세요.')),
+      );
+      return;
+    }
+    if (_wordController.text.trim().isEmpty || _meaningController.text.trim().isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('단어와 의미는 필수 입력 항목입니다.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('로그인이 필요합니다.');
+      }
+
+      await FirebaseFirestore.instance
+          .collection('vocabulary_books')
+          .doc(_selectedBookId)
+          .collection('words')
+          .add({
+        'word': _wordController.text.trim(),
+        'meaning': _meaningController.text.trim(),
+        'pronunciation': _pronunciationController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'ownerUid': user.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('새 단어가 추가되었습니다.')),
+        );
+        // 입력 필드 초기화
+        _wordController.clear();
+        _meaningController.clear();
+        _pronunciationController.clear();
+        _descriptionController.clear();
+        FocusScope.of(context).unfocus();
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('오류가 발생했습니다: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(), // 화면 다른 곳 터치 시 키보드 숨기기
       child: SingleChildScrollView(
@@ -629,38 +714,67 @@ class _AddWordScreenState extends State<AddWordScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DropdownButtonFormField<String>(
-              hint: const Text('단어장을 선택하세요'),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedBook = newValue;
-                });
-              },
-              items: _vocabularyBooks.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('vocabulary_books')
+                  .where('ownerUid', isEqualTo: user?.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final books = snapshot.data!.docs.map((doc) {
+                  return DropdownMenuItem<String>(
+                    value: doc.id,
+                    child: Text(doc['name'] as String),
+                  );
+                }).toList();
+
+                return DropdownButtonFormField<String>(
+                  value: _selectedBookId,
+                  hint: const Text('단어장을 선택하세요'),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedBookId = newValue;
+                    });
+                  },
+                  items: books,
+                  decoration: const InputDecoration(),
                 );
-              }).toList(),
-              decoration: const InputDecoration(),
+              },
             ),
             const SizedBox(height: 20.0),
-            if (_selectedBook != null)
+            if (_selectedBookId != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TextFormField(decoration: const InputDecoration(labelText: '단어 (일본어)')),
-                  const SizedBox(height: 16.0),
-                  TextFormField(decoration: const InputDecoration(labelText: '의미 (한국어)')),
-                  const SizedBox(height: 16.0),
-                  TextFormField(decoration: const InputDecoration(labelText: '발음 (히라가나/가타카나/로마자)')),
-                  const SizedBox(height: 16.0),
-                  TextFormField(decoration: const InputDecoration(labelText: '설명 (예문 등)'), maxLines: 3),
-                  const SizedBox(height: 32.0),
-                  ElevatedButton(
-                    onPressed: () { /* TODO: 단어 추가 로직 */ },
-                    child: const Text('단어 추가하기', style: TextStyle(fontWeight: FontWeight.bold)),
+                  TextFormField(
+                    controller: _wordController,
+                    decoration: const InputDecoration(labelText: '단어 (일본어)'),
                   ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _meaningController,
+                    decoration: const InputDecoration(labelText: '의미 (한국어)'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _pronunciationController,
+                    decoration: const InputDecoration(labelText: '발음 (히라가나/가타카나/로마자)'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(labelText: '설명 (예문 등)'),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 32.0),
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ElevatedButton(
+                          onPressed: _addWord,
+                          child: const Text('단어 추가하기', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
                 ],
               ),
           ],
@@ -669,6 +783,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
     );
   }
 }
+
 
 // --- 문자 학습 기능 구현 ---
 
@@ -819,7 +934,7 @@ class _KanaListScreenState extends State<KanaListScreen> {
                         side: const BorderSide(color: AppColors.border, width: 1),
                       ),
                       child: InkWell(
-                        onTap: () { /* TODO: 문자 선택 시 효과 (소리 재생 등) */ },
+                        onTap: () { /* TODO */ },
                         borderRadius: BorderRadius.circular(12.0),
                         child: FittedBox(
                           fit: BoxFit.contain,
