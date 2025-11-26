@@ -461,6 +461,55 @@ class CalendarScreen extends StatelessWidget {
 class VocabularyListScreen extends StatelessWidget {
   const VocabularyListScreen({super.key});
 
+  // 단어장 삭제 함수
+  Future<void> _deleteVocabularyBook(BuildContext context, String bookId) async {
+    // 확인 대화상자 표시
+    final bool? confirmed = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('단어장 삭제'),
+          content: const Text('이 단어장을 정말 삭제하시겠습니까?\n단어장 안의 모든 단어가 함께 삭제됩니다.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // 취소
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // 삭제 확인
+              child: const Text('삭제', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    // 사용자가 '삭제'를 확인했을 때만 실행
+    if (confirmed == true) {
+      try {
+        final bookRef = FirebaseFirestore.instance.collection('vocabulary_books').doc(bookId);
+        // 단어장 안의 모든 단어들을 먼저 삭제 (Batch-Commit)
+        final wordsSnapshot = await bookRef.collection('words').get();
+        final WriteBatch batch = FirebaseFirestore.instance.batch();
+        for (final doc in wordsSnapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+
+        // 단어장 자체를 삭제
+        await bookRef.delete();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('단어장이 삭제되었습니다.')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('삭제 중 오류가 발생했습니다: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -492,8 +541,11 @@ class VocabularyListScreen extends StatelessWidget {
             padding: const EdgeInsets.only(top: 8, bottom: 80),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final book = docs[index];
-              final bookName = book['name'] as String;
+              final bookData = docs[index].data() as Map<String, dynamic>;
+              final bookId = docs[index].id;
+              final bookName = bookData['name'] as String;
+              // 데이터에 'wordCount'가 없으면 0으로 처리
+              final wordCount = bookData.containsKey('wordCount') ? bookData['wordCount'] as int : 0;
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -504,14 +556,27 @@ class VocabularyListScreen extends StatelessWidget {
                 ),
                 child: ListTile(
                   title: Text(bookName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('0 단어'), // TODO: 단어 개수 표시
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  // <<<<<<< 바로 이 부분만 수정되었습니다!
+                  subtitle: Text('$wordCount 단어'),
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _deleteVocabularyBook(context, bookId);
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text('삭제'),
+                      ),
+                    ],
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
                       FadePageRoute(
                         child: WordListScreen(
-                          bookId: book.id,
+                          bookId: bookId,
                           bookName: bookName,
                         ),
                       ),
@@ -572,6 +637,7 @@ class _AddVocabularyBookScreenState extends State<AddVocabularyBookScreen> {
         'name': _bookNameController.text.trim(),
         'ownerUid': user.uid,
         'createdAt': FieldValue.serverTimestamp(),
+        'wordCount': 0, // <<<<<<< 수정된 부분
       });
 
       if (mounted) {
@@ -613,9 +679,9 @@ class _AddVocabularyBookScreenState extends State<AddVocabularyBookScreen> {
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
-                    onPressed: _addVocabularyBook,
-                    child: const Text('만들기', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
+              onPressed: _addVocabularyBook,
+              child: const Text('만들기', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
           ],
         ),
       ),
@@ -628,6 +694,17 @@ class WordListScreen extends StatelessWidget {
   final String bookName;
 
   const WordListScreen({super.key, required this.bookId, required this.bookName});
+
+  // 단어 삭제 함수 (카운트 감소 포함)
+  Future<void> _deleteWord(String wordId) async {
+    final bookRef = FirebaseFirestore.instance.collection('vocabulary_books').doc(bookId);
+
+    // 트랜잭션을 사용하여 데이터 일관성 보장
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      transaction.delete(bookRef.collection('words').doc(wordId));
+      transaction.update(bookRef, {'wordCount': FieldValue.increment(-1)});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -658,11 +735,29 @@ class WordListScreen extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final word = docs[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  title: Text(word['word'] as String),
-                  subtitle: Text(word['meaning'] as String),
+              final wordData = word.data() as Map<String, dynamic>;
+
+              return Dismissible(
+                key: Key(word.id),
+                direction: DismissDirection.endToStart,
+                onDismissed: (direction) async {
+                  await _deleteWord(word.id); // <<<<<<< 수정된 부분
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('\'${wordData['word']}\' 단어가 삭제되었습니다.')),
+                  );
+                },
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                child: Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: ListTile(
+                    title: Text(wordData['word'] as String),
+                    subtitle: Text(wordData['meaning'] as String),
+                  ),
                 ),
               );
             },
@@ -672,7 +767,6 @@ class WordListScreen extends StatelessWidget {
     );
   }
 }
-
 
 class AddWordScreen extends StatefulWidget {
   const AddWordScreen({super.key});
@@ -698,6 +792,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
     super.dispose();
   }
 
+  // 단어 추가 함수 (카운트 증가 포함)
   Future<void> _addWord() async {
     if (_selectedBookId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -706,7 +801,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
       return;
     }
     if (_wordController.text.trim().isEmpty || _meaningController.text.trim().isEmpty) {
-       ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('단어와 의미는 필수 입력 항목입니다.')),
       );
       return;
@@ -722,17 +817,22 @@ class _AddWordScreenState extends State<AddWordScreen> {
         throw Exception('로그인이 필요합니다.');
       }
 
-      await FirebaseFirestore.instance
-          .collection('vocabulary_books')
-          .doc(_selectedBookId)
-          .collection('words')
-          .add({
-        'word': _wordController.text.trim(),
-        'meaning': _meaningController.text.trim(),
-        'pronunciation': _pronunciationController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'ownerUid': user.uid,
-        'createdAt': FieldValue.serverTimestamp(),
+      final bookRef = FirebaseFirestore.instance.collection('vocabulary_books').doc(_selectedBookId);
+
+      // 트랜잭션을 사용하여 데이터 일관성 보장
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // 새 단어 추가
+        transaction.set(bookRef.collection('words').doc(), {
+          'word': _wordController.text.trim(),
+          'meaning': _meaningController.text.trim(),
+          'pronunciation': _pronunciationController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'ownerUid': user.uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // 단어장 wordCount 필드 1 증가
+        transaction.update(bookRef, {'wordCount': FieldValue.increment(1)});
       });
 
       if (mounted) {
@@ -767,7 +867,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(), // 화면 다른 곳 터치 시 키보드 숨기기
+      onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -830,9 +930,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : ElevatedButton(
-                          onPressed: _addWord,
-                          child: const Text('단어 추가하기', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
+                    onPressed: _addWord,
+                    child: const Text('단어 추가하기', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
           ],
