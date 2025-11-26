@@ -63,6 +63,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '113939685128',
     projectId: 'capstone-ee1db',
     storageBucket: 'capstone-ee1db.firebasestorage.app',
+    androidClientId: '113939685128-idt75jqgp3pnjp24c7mm3uf3eebbqe5a.apps.googleusercontent.com',
+    iosClientId: '113939685128-l9qqd15frlpr6o16qn80h8k8ogng8dg4.apps.googleusercontent.com',
     iosBundleId: 'com.example.nihongo',
   );
+
 }

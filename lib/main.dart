@@ -506,7 +506,17 @@ class VocabularyListScreen extends StatelessWidget {
                   title: Text(bookName, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: const Text('0 단어'), // TODO: 단어 개수 표시
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () { /* TODO: 단어장 상세 화면으로 이동 */ },
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      FadePageRoute(
+                        child: WordListScreen(
+                          bookId: book.id,
+                          bookName: bookName,
+                        ),
+                      ),
+                    );
+                  },
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
               );
@@ -555,21 +565,20 @@ class _AddVocabularyBookScreenState extends State<AddVocabularyBookScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        // 이 경우는 거의 없지만, 안정성을 위해 추가
         throw Exception('로그인이 필요합니다.');
       }
 
       await FirebaseFirestore.instance.collection('vocabulary_books').add({
         'name': _bookNameController.text.trim(),
-        'ownerUid': user.uid, // 단어장 소유자 정보 저장
-        'createdAt': FieldValue.serverTimestamp(), // 생성 시간 저장
+        'ownerUid': user.uid,
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('새 단어장이 추가되었습니다.')),
         );
-        Navigator.pop(context); // 성공 시 이전 화면으로 돌아가기
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -609,6 +618,56 @@ class _AddVocabularyBookScreenState extends State<AddVocabularyBookScreen> {
                   ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class WordListScreen extends StatelessWidget {
+  final String bookId;
+  final String bookName;
+
+  const WordListScreen({super.key, required this.bookId, required this.bookName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(bookName)),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('vocabulary_books')
+            .doc(bookId)
+            .collection('words')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('오류가 발생했습니다: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('아직 추가된 단어가 없습니다.'));
+          }
+
+          final docs = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(8.0),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final word = docs[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: ListTile(
+                  title: Text(word['word'] as String),
+                  subtitle: Text(word['meaning'] as String),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -731,7 +790,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
                 }).toList();
 
                 return DropdownButtonFormField<String>(
-                  value: _selectedBookId,
                   hint: const Text('단어장을 선택하세요'),
                   onChanged: (String? newValue) {
                     setState(() {
@@ -869,7 +927,8 @@ class _KanaListScreenState extends State<KanaListScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          }
+          if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('데이터가 없습니다.'));
@@ -1017,15 +1076,13 @@ class FlashcardScreenState extends State<FlashcardScreen> {
     final progress = (_currentIndex + 1) / filteredList.length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: AppColors.border,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
+      appBar: AppBar(title: Text(widget.title)),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(4.0),
+        child: LinearProgressIndicator(
+          value: progress,
+          backgroundColor: AppColors.border,
+          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
         ),
       ),
       body: Padding(
