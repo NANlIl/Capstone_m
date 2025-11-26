@@ -1039,7 +1039,8 @@ class FlashcardScreenState extends State<FlashcardScreen> {
   bool _isFlipped = false;
 
   void _nextCard() {
-    if (_currentIndex < widget.kanaList.length - 1) {
+    final filteredList = widget.kanaList.where((kana) => kana.character.isNotEmpty).toList();
+    if (_currentIndex < filteredList.length - 1) {
       setState(() {
         _currentIndex++;
         _isFlipped = false;
@@ -1072,17 +1073,25 @@ class FlashcardScreenState extends State<FlashcardScreen> {
       );
     }
 
+    // 현재 인덱스가 필터링된 리스트의 길이를 벗어나지 않도록 방지
+    if (_currentIndex >= filteredList.length) {
+      _currentIndex = filteredList.length - 1;
+    }
+
     final kana = filteredList[_currentIndex];
     final progress = (_currentIndex + 1) / filteredList.length;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(4.0),
-        child: LinearProgressIndicator(
-          value: progress,
-          backgroundColor: AppColors.border,
-          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+      appBar: AppBar(
+        title: Text(widget.title),
+        // 올바른 위치로 수정된 bottom 속성
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4.0),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: AppColors.border,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
         ),
       ),
       body: Padding(
