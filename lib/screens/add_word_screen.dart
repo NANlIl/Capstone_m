@@ -69,14 +69,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
                         final newBookName = await _showAddBookBottomSheet(context);
                         if (newBookName != null && newBookName.isNotEmpty) {
                           final newBookId = await _addVocabularyBook(newBookName);
-                          setState(() {
-                            _selectedBookId = newBookId;
-                          });
+                          // setState를 호출하지 않고 변수 값만 변경하여 불필요한 리빌드 방지
+                          _selectedBookId = newBookId;
+                          // DropdownButtonFormField는 스스로 UI를 업데이트하므로 화면 전체를 갱신할 필요 없음
+                          _formKey.currentState?.validate(); // 선택이 완료되었음을 알려주기 위해 유효성 검사 트리거
                         } 
                       } else {
-                        setState(() {
-                          _selectedBookId = value;
-                        });
+                        _selectedBookId = value;
                       }
                     },
                     validator: (value) => value == null || value == '__NEW__' ? '단어장을 선택해주세요.' : null,
@@ -125,6 +124,14 @@ class _AddWordScreenState extends State<AddWordScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
       builder: (BuildContext context) {
+        // 위젯이 화면에서 사라질 때 컨트롤러를 정리합니다.
+        // 단, 여기서는 _showAddBookBottomSheet 함수가 종료될 때이므로, 
+        // 이 방식보다는 StatefulWidget으로 분리하는 것이 더 정석적인 방법입니다.
+        // 하지만 현재 구조에서는 이 방법이 가장 간단합니다.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) bookNameController.dispose();
+        });
+
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -160,7 +167,10 @@ class _AddWordScreenState extends State<AddWordScreen> {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      // 바텀 시트가 닫힐 때 컨트롤러를 확실히 해제합니다.
+      bookNameController.dispose();
+    });
   }
 
   Future<String> _addVocabularyBook(String bookName) async {
@@ -175,7 +185,11 @@ class _AddWordScreenState extends State<AddWordScreen> {
   }
 
   Future<void> _saveWord() async {
-    if (!_formKey.currentState!.validate() || _selectedBookId == null) return;
+    if (!_formKey.currentState!.validate() || _selectedBookId == null || _selectedBookId == '__NEW__') {
+      // __NEW__ 상태에서도 저장이 눌리는 것을 방지
+      _formKey.currentState!.validate();
+      return;
+    }
 
     setState(() {
       _isSaving = true;
