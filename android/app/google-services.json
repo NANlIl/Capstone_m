@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "113939685128-22ohkuc50695emcdglsgth52n8gh42kf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nihongo",
+            "certificate_hash": "8da2842bfe56e0ee46e4cba715231d87caf1f702"
+          }
+        },
+        {
           "client_id": "113939685128-idt75jqgp3pnjp24c7mm3uf3eebbqe5a.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
