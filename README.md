@@ -199,11 +199,11 @@ flutter build appbundle --release --flavor prod --dart-define=ENV=prod
 lib/
 ├─ core/          # 공통 테마와 설정
 ├─ features/
-│  ├─ auth/       # 로그인과 사용자 인증
-│  ├─ learning/   # 학습 로드맵과 카드 학습
-│  ├─ vocabulary/ # 단어장과 퀴즈
-│  ├─ community/  # 게시글과 댓글
-│  ├─ stats/      # 학습 통계
+│  ├─ auth/       # 로그인
+│  ├─ learning/   # 학습
+│  ├─ vocabulary/ # 단어장
+│  ├─ community/  # 커뮤니티
+│  ├─ stats/      # 통계
 │  └─ my_page/    # 마이페이지
 └─ widgets/       # 공통 위젯
 ```
