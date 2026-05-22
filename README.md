@@ -2,9 +2,15 @@
 <br>
 <img src="https://readme-typing-svg.herokuapp.com?font=Do+Hyeon&size=28&pause=100&color=FF8F95&width=700&speed=50&deleteSpeed=120&lines=일본어+학습+앱+nihongo" alt="일본어 학습 앱 nihongo" />
 
-<img width="1856" height="1048" alt="KakaoTalk_20260508_181628313" src="https://github.com/user-attachments/assets/6b84ec5b-35ef-4344-b882-063f03ee16c5" />
+<b>홍보 및 기능 설명 영상<b>
 
-중간 발표 PDF: [캡스톤 중간 발표.pdf](https://github.com/user-attachments/files/28005351/default.pdf)
+
+<video src="https://github.com/user-attachments/assets/8de93a01-72d3-4479-8457-3e413e497f23" controls width="700"></video>
+
+
+
+중간 발표 PDF: [캡스톤 중간 발표.pdf](https://github.com/user-attachments/files/28005351/default.pdf) <br>
+개발 기간: 2026.03.12  ~ 2026.04.27
 
 <br>
 
@@ -199,11 +205,11 @@ flutter build appbundle --release --flavor prod --dart-define=ENV=prod
 lib/
 ├─ core/          # 공통 테마와 설정
 ├─ features/
-│  ├─ auth/       # 로그인
-│  ├─ learning/   # 학습
-│  ├─ vocabulary/ # 단어장
-│  ├─ community/  # 커뮤니티
-│  ├─ stats/      # 통계
+│  ├─ auth/       # 로그인과 사용자 인증
+│  ├─ learning/   # 학습 로드맵과 카드 학습
+│  ├─ vocabulary/ # 단어장과 퀴즈
+│  ├─ community/  # 게시글과 댓글
+│  ├─ stats/      # 학습 통계
 │  └─ my_page/    # 마이페이지
 └─ widgets/       # 공통 위젯
 ```
