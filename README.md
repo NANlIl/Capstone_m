@@ -4,8 +4,14 @@
 
 <b>홍보 및 기능 설명 영상<b>
 
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/ded884da-77da-488e-82ad-27c41869b7b7"
+         controls
+         width="700">
+  </video>
+</p>
 
-<video src="https://github.com/user-attachments/assets/8de93a01-72d3-4479-8457-3e413e497f23" controls width="700"></video>
+
 
 
 
