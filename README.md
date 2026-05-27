@@ -5,12 +5,11 @@
 <b>홍보 및 기능 설명 영상<b>
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/ded884da-77da-488e-82ad-27c41869b7b7](https://github.com/user-attachments/assets/97e82f24-708a-4e76-b45e-e02256075810"
+  <video src="https://github.com/user-attachments/assets/63cb8f83-25b8-4785-bf81-9e62980b5259"
          controls
-         width="700">
+         width="600">
   </video>
 </p>
-
 
 
 
