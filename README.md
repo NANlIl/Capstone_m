@@ -4,7 +4,7 @@
 
 <b>홍보 및 기능 설명 영상<b>
 
-<table align="center">
+<table width="100%">
 <tr>
 <td align="center">
 
