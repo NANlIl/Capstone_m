@@ -1,10 +1,12 @@
 # 캡스톤 이프로팀
 <br>
 <img src="https://readme-typing-svg.herokuapp.com?font=Do+Hyeon&size=28&pause=100&color=FF8F95&width=700&speed=50&deleteSpeed=120&lines=일본어+학습+앱+nihongo" alt="일본어 학습 앱 nihongo" />
+<img width="1856" height="1048" alt="KakaoTalk_20260508_181628313" src="https://github.com/user-attachments/assets/da7445e3-9a14-44ee-b22e-c2e1d8b43511" />
 
-<b>홍보 및 기능 설명 영상<b>
 
-<table width="100%">
+## 홍보 및 기능 설명 영상
+
+<table align="center">
 <tr>
 <td align="center">
 
@@ -18,11 +20,18 @@
 </tr>
 </table>
 
+<br>
 
+<p align="center">
+  <img width="220" alt="APK 다운로드 QR 코드" src="https://github.com/user-attachments/assets/1f2fa4cb-e81b-4510-950d-236398854e1c" />
+  <br>
+  <b>APK 다운로드</b>
+</p>
 
+<br>
 
 중간 발표 PDF: [캡스톤 중간 발표.pdf](https://github.com/user-attachments/files/28005351/default.pdf) <br>
-개발 기간: 2026.03.12  ~ 2026.04.27
+개발 기간: 2026.03.12 ~ 2026.04.27
 
 <br>
 
@@ -170,6 +179,7 @@
 https://github.com/user-attachments/assets/a1044807-b21b-493b-9db1-dffb91f81a75
 
 <br>
+
 
 ## 4. 기술 스택
 
