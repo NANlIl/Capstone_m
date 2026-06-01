@@ -44,7 +44,6 @@
 깜빡이 암기, 카드 학습, 퀴즈 등 여러 학습 방식을 제공하여 사용자가 자신에게 적합한 방식으로 단어를 익힐 수 있도록 돕습니다. 또한 학습 통계를 통해 취약 영역 분석 등을 제공하여 보다 체계적인 일본어 학습을 지원합니다.
 <br>
 <br>
-
 ## 2. 핵심 기능
 
 ### 1) 학습
@@ -55,19 +54,17 @@
 - 깜빡이 학습법과 블러 기반 예문 학습
 - 학습 상태 기록
 
-
-<table>
-  
+<table width="100%">
   <tr>
-    <td align="center">
-  <img width="220" alt="학습 로드맵" src="https://github.com/user-attachments/assets/05d27f87-1f9c-457e-b287-a8592ba417e8" />
-</td>
-    <td align="center">
-  <img width="220" alt="단어 학습" src="https://github.com/user-attachments/assets/c1cca77b-d2c5-4771-90d9-6c8737519698" />
-</td>
-<td align="center">
-  <img width="220" alt="예문 학습" src="https://github.com/user-attachments/assets/92ae5bcb-6f7e-4707-9bc2-0562bd21478e" />
-</td>
+    <td width="33%" align="center">
+      <img width="270" alt="학습 로드맵" src="https://github.com/user-attachments/assets/05d27f87-1f9c-457e-b287-a8592ba417e8" />
+    </td>
+    <td width="33%" align="center">
+      <img width="270" alt="단어 학습" src="https://github.com/user-attachments/assets/c1cca77b-d2c5-4771-90d9-6c8737519698" />
+    </td>
+    <td width="33%" align="center">
+      <img width="270" alt="예문 학습" src="https://github.com/user-attachments/assets/92ae5bcb-6f7e-4707-9bc2-0562bd21478e" />
+    </td>
   </tr>
   <tr>
     <td align="center">학습 로드맵</td>
@@ -83,16 +80,16 @@
 - 필터를 통한 단어 조회
 - 단어장 기반 퀴즈
 
-<table>
+<table width="100%">
   <tr>
-    <td align="center">
-      <img width="220" alt="단어장 목록" src="https://github.com/user-attachments/assets/a20f96b8-d8c7-4fca-b26e-0809c24e576e" />
+    <td width="33%" align="center">
+      <img width="270" alt="단어장 목록" src="https://github.com/user-attachments/assets/a20f96b8-d8c7-4fca-b26e-0809c24e576e" />
     </td>
-    <td align="center">
-      <img width="220" alt="단어장 상세" src="https://github.com/user-attachments/assets/7d2ff0b5-dcf0-4167-8fa8-9f36b0d1416b" />
+    <td width="33%" align="center">
+      <img width="270" alt="단어장 상세" src="https://github.com/user-attachments/assets/7d2ff0b5-dcf0-4167-8fa8-9f36b0d1416b" />
     </td>
-    <td align="center">
-      <img width="220" alt="학습한 단어" src="https://github.com/user-attachments/assets/38508e8f-13e7-4abe-9e20-5bf620844be9" />
+    <td width="33%" align="center">
+      <img width="270" alt="학습한 단어" src="https://github.com/user-attachments/assets/38508e8f-13e7-4abe-9e20-5bf620844be9" />
     </td>
   </tr>
   <tr>
@@ -102,21 +99,19 @@
   </tr>
 </table>
 
-
-
 ### 3) 커뮤니티
 
 - 카테고리별 게시글 목록
 - 게시글 작성 및 상세 조회
 - 댓글 및 대댓글
 
-<table>
+<table width="100%">
   <tr>
-    <td align="center">
-      <img width="220" alt="게시글 목록" src="https://github.com/user-attachments/assets/039123a3-7bce-4794-8077-572ea643a5b7" />
+    <td width="50%" align="center">
+      <img width="300" alt="게시글 목록" src="https://github.com/user-attachments/assets/039123a3-7bce-4794-8077-572ea643a5b7" />
     </td>
-    <td align="center">
-      <img width="220" alt="게시글 상세와 댓글" src="https://github.com/user-attachments/assets/a60be9f3-00af-47a6-b166-cbd4ecc4351a" />
+    <td width="50%" align="center">
+      <img width="300" alt="게시글 상세와 댓글" src="https://github.com/user-attachments/assets/a60be9f3-00af-47a6-b166-cbd4ecc4351a" />
     </td>
   </tr>
   <tr>
@@ -125,7 +120,6 @@
   </tr>
 </table>
 
-
 ### 4) 통계
 
 - 학습 시간 및 누적 학습량 확인
@@ -133,13 +127,13 @@
 - 약한 영역 분석
 - 학습 뱃지
 
-<table>
+<table width="100%">
   <tr>
-    <td align="center">
-      <img width="220" alt="약한 영역 분석" src="https://github.com/user-attachments/assets/014546d7-8613-4937-add1-4a70e0212775" />
+    <td width="50%" align="center">
+      <img width="300" alt="약한 영역 분석" src="https://github.com/user-attachments/assets/014546d7-8613-4937-add1-4a70e0212775" />
     </td>
-    <td align="center">
-      <img width="220" alt="학습 현황" src="https://github.com/user-attachments/assets/5fbea57b-97c8-4aaf-a85b-d207758537c9" />
+    <td width="50%" align="center">
+      <img width="300" alt="학습 현황" src="https://github.com/user-attachments/assets/5fbea57b-97c8-4aaf-a85b-d207758537c9" />
     </td>
   </tr>
   <tr>
@@ -148,21 +142,19 @@
   </tr>
 </table>
 
-
-
 ### 5) 계정 및 마이페이지
 
 - Google 로그인
 - 로그아웃 및 계정 탈퇴
 - 공지사항, 의견 남기기, 약관 확인
 
-<table>
+<table width="100%">
   <tr>
-    <td align="center">
-      <img width="220" alt="로그인" src="https://github.com/user-attachments/assets/2afce7de-f2c9-4a59-8b49-b19503fd22fa" />
+    <td width="50%" align="center">
+      <img width="300" alt="로그인" src="https://github.com/user-attachments/assets/2afce7de-f2c9-4a59-8b49-b19503fd22fa" />
     </td>
-    <td align="center">
-      <img width="220" alt="마이페이지" src="https://github.com/user-attachments/assets/365f425f-02d2-4ccf-869b-580b9a4d2fe1" />
+    <td width="50%" align="center">
+      <img width="300" alt="마이페이지" src="https://github.com/user-attachments/assets/365f425f-02d2-4ccf-869b-580b9a4d2fe1" />
     </td>
   </tr>
   <tr>
@@ -170,13 +162,25 @@
     <td align="center">마이페이지</td>
   </tr>
 </table>
-
 <br>
 <br>
 
 ## 3. 시연 영상
 
-https://github.com/user-attachments/assets/a1044807-b21b-493b-9db1-dffb91f81a75
+<table align="center">
+<tr>
+<td align="center">
+
+<video
+  src="https://github.com/user-attachments/assets/a1044807-b21b-493b-9db1-dffb91f81a75"
+  controls
+  width="600">
+</video>
+
+</td>
+</tr>
+</table>
+
 
 <br>
 
@@ -239,25 +243,25 @@ lib/
 
 ## 7. 팀 소개
 
-<table>
+<table width="100%">
   <tr>
-    <th align="center">👑이준서</th>
-    <th align="center">김덕우</th>
-    <th align="center">김은호</th>
-    <th align="center">김유진</th>
+    <th width="25%" align="center">👑 이준서</th>
+    <th width="25%" align="center">김덕우</th>
+    <th width="25%" align="center">김은호</th>
+    <th width="25%" align="center">김유진</th>
   </tr>
   <tr>
-    <td align="center">
-      <img width="130" alt="이준서" src="https://github.com/user-attachments/assets/2a531945-3cf0-4cf5-be7b-a7784584d629" />
+    <td width="25%" align="center">
+      <img width="205" alt="이준서" src="https://github.com/user-attachments/assets/2a531945-3cf0-4cf5-be7b-a7784584d629" />
     </td>
-    <td align="center">
-      <img width="130" alt="김덕우" src="https://github.com/user-attachments/assets/15abc0b1-ee8b-4d4f-89c4-a96c73800ca5" />
+    <td width="25%" align="center">
+      <img width="205" alt="김덕우" src="https://github.com/user-attachments/assets/15abc0b1-ee8b-4d4f-89c4-a96c73800ca5" />
     </td>
-    <td align="center">
-      <img width="130" alt="김은호" src="https://github.com/user-attachments/assets/05ff2835-7d5c-4d3a-b61a-0d5725991903" />
+    <td width="25%" align="center">
+      <img width="205" alt="김은호" src="https://github.com/user-attachments/assets/05ff2835-7d5c-4d3a-b61a-0d5725991903" />
     </td>
-    <td align="center">
-      <img width="130" alt="김유진" src="https://github.com/user-attachments/assets/aba665e3-6dfc-4b64-bb5e-959a05abd102" />
+    <td width="25%" align="center">
+      <img width="205" alt="김유진" src="https://github.com/user-attachments/assets/aba665e3-6dfc-4b64-bb5e-959a05abd102" />
     </td>
   </tr>
   <tr>
